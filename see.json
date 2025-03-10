@@ -1,0 +1,6 @@
+{'id': '26974', 'isResult': False, 'side': 'h', 'h': {'id': '89', 'title': 'Manchester United', 'short_title': 'MUN'
+    }, 'a': {'id': '71', 'title': 'Aston Villa', 'short_title': 'AVL'
+    }, 'goals': {'h': None, 'a': None
+    }, 'xG': {'h': None, 'a': None
+    }, 'datetime': '2025-05-25 16: 00: 00'
+}
