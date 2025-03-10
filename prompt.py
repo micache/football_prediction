@@ -208,46 +208,6 @@ def system_prompt_match_report():
     return prompt.strip()
 
 def generate_match_report(prompt):
-    llm_client = LLM_caller()
-    return llm_client.call_google(
-        model_name="gemini-2.0-flash",
-        system_prompt=system_prompt_match_report(),
-        max_len=800,
-        content=prompt,
-        temperature=0.5
-    )
-
-def get_history_match_prompt(data):
-    prompt = """"""
-
-    for t in ["home", "away"]:
-        prompt += f"""
-        Analyze the nearest matches of {t} team and extract key insights to understand team performance:
-        """
-        for match_data in data['nearest_match'][t]:
-            prompt += generate_match_report(
-                generate_prompt_per_match(match_data['match_info']) + 
-                generate_lineup_report_prompt(match_data['player_info'], 'h' if data[t]==match_data['match_info']['team_h'] else 'a') +
-                generate_shot_event_prompt(match_data['shot_info']))
-
-    prompt += f"""
-    Analyze the nearest matches of home team as home and extract key insights to understand team performance:
-    """
-    for match_data in data['nearest_home_match']:
-        prompt += generate_prompt_per_match(match_data['match_info'])
-        prompt += generate_match_report(
-                generate_prompt_per_match(match_data['match_info']) + 
-                generate_lineup_report_prompt(match_data['player_info'], 'h') +
-                generate_shot_event_prompt(match_data['shot_info']))
-
-    prompt += f"""
-    Analyze the matches in the past between home and away and extract key insights to understand team performance:
-    """
-    for match_data in data['past_match']:
-        prompt += generate_match_report(
-            generate_prompt_per_match(match_data['match_info']) + 
-            generate_lineup_report_prompt(match_data['player_info']) + 
-            generate_shot_event_prompt(match_data['shot_info']))
 
     prompt += """
 ### **Key Analytical Questions**
@@ -255,6 +215,7 @@ def get_history_match_prompt(data):
 2. **Did pressing intensity (PPDA) disrupt the opponent's build-up, and how did it translate into goal-scoring opportunities or defensive stability?**
 3. **How effectively did each team convert deep entries into high-quality goal-scoring chances, and what tactical patterns emerged?**
 4. **Which tactical elements from this match suggest future performance trends or strategic adaptations for both teams?**
+5. **Write down any special signal like: the important attacker is not in the starting, or the change of formation or more:all thing that can affect the game result.**
 
 ### **Squad Data Analysis Instructions**
 1. **Objective Performance Summary:** Base assessments strictly on data, avoiding subjective commentary.
@@ -270,9 +231,52 @@ def get_history_match_prompt(data):
 4. **Match Context:** Explain how shot data correlates with the final result and overall tactical approach.
 5. **Tactical Interpretation:** Determine if the shot distribution reflects specific strategies, such as counter-attacks or set-piece routines.
 6. **Key Takeaways:** Summarize crucial insights that offer deeper understanding and predictive value for future matches.
+7. **Shot aganist:** Analyze the shot that had been made aganist them to find the defensive style and performance of the team.
 
-Use this structured approach to extract critical insights into team performance, tactical effectiveness, and key areas for betting.
+Do not just answer question, instead analyze like a professional soccer analyst.
+Use this structured approach to extract critical insights into team performance, tactical effectiveness, and key areas for predicting.
 """
+
+    llm_client = LLM_caller()
+    return llm_client.call_google(
+        model_name="gemini-2.0-flash",
+        system_prompt=system_prompt_match_report(),
+        max_len=800,
+        content=prompt,
+        temperature=0.5
+    )
+
+def get_history_match_prompt(data):
+    prompt = """"""
+
+    for t in ["home", "away"]:
+        prompt += f"""
+        Read the analysis of nearest matches of {t} team and extract key insights to understand team performance:
+        """
+        for match_data in data['nearest_match'][t]:
+            prompt += generate_match_report(
+                generate_prompt_per_match(match_data['match_info']) + 
+                generate_lineup_report_prompt(match_data['player_info'], 'h' if data[t]==match_data['match_info']['team_h'] else 'a') +
+                generate_shot_event_prompt(match_data['shot_info']))
+
+    prompt += f"""
+    Read the analysis of nearest matches of home team as home and extract key insights to understand team performance:
+    """
+    for match_data in data['nearest_home_match']:
+        prompt += generate_prompt_per_match(match_data['match_info'])
+        prompt += generate_match_report(
+                generate_prompt_per_match(match_data['match_info']) + 
+                generate_lineup_report_prompt(match_data['player_info'], 'h') +
+                generate_shot_event_prompt(match_data['shot_info']))
+
+    prompt += f"""
+    Read the analysis of nearest matches in the past between home and away and extract key insights to understand team performance:
+    """
+    for match_data in data['past_match']:
+        prompt += generate_match_report(
+            generate_prompt_per_match(match_data['match_info']) + 
+            generate_lineup_report_prompt(match_data['player_info']) + 
+            generate_shot_event_prompt(match_data['shot_info']))
 
     return prompt.strip()
 
