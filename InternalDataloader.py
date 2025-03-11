@@ -14,6 +14,7 @@ class InternalDataloader:
         self.season = year
         self.league = league
         self.understat = UnderstatClient()
+        self.
 
     async def get_league_table(self, start_date=None, end_date=None):
         async with aiohttp.ClientSession() as session:
@@ -62,6 +63,9 @@ class InternalDataloader:
                     'away': away_stats
                 }
     
+    def get_more_match_info(self, cur_data):
+
+
     async def get_all_data(self, team, date, lim, lineup=None):
         data = {}
         data["all_league"] = await self.get_team_data(team[0], team[1], end_date=date)
@@ -85,7 +89,7 @@ class InternalDataloader:
                 if match_date >= date or cnt >= lim:
                     continue
                 data["nearest_match"][t].append({
-                        'match_info': self.understat.match(match["id"]).get_match_info(),
+                        'match_info': self.get_more_match_info(self.understat.match(match["id"]).get_match_info()),
                         'player_info': self.understat.match(match["id"]).get_roster_data(),
                         'shot_info': self.understat.match(match["id"]).get_shot_data()
                     })
