@@ -12,6 +12,20 @@
   const allowanceInfo = document.getElementById("allowanceInfo");
   const statusBox = document.getElementById("status");
 
+  if (!statusBox) {
+    console.error("Status element not found in DOM; aborting app initialization.");
+    return;
+  }
+
+  if (typeof window.ethers === "undefined") {
+    statusBox.textContent = "Failed to load ethers.js. Check your network connection and refresh the page.";
+    statusBox.classList.add("error");
+    console.error("Ethers.js did not load. Ensure the CDN script is reachable and not blocked by the browser.");
+    return;
+  }
+
+  const { ethers } = window;
+
   const ERC20_ABI = [
     "function name() view returns (string)",
     "function symbol() view returns (string)",
@@ -26,6 +40,7 @@
   let currentAccount;
   let tokenContract;
   let tokenMeta = { symbol: "", decimals: 18 };
+  let isConnectingWallet = false;
 
   const logStatus = (message, isError = false) => {
     statusBox.textContent = message;
@@ -59,11 +74,16 @@
   };
 
   const connectWallet = async () => {
+    if (isConnectingWallet) {
+      logStatus("Already requesting wallet access. Check MetaMask.");
+      return;
+    }
     try {
+      isConnectingWallet = true;
       initializeProvider();
-      const accounts = await window.ethereum.request({
-        method: "eth_requestAccounts"
-      });
+      logStatus("Requesting MetaMask connection...");
+      console.info("Requesting MetaMask connection via eth_requestAccounts");
+      const accounts = await provider.send("eth_requestAccounts", []);
       if (!accounts || accounts.length === 0) {
         throw new Error("No accounts authorized");
       }
@@ -71,9 +91,12 @@
       signer = await provider.getSigner();
       await updateAccountDisplay();
       logStatus("Wallet connected. Load a token to continue.");
+      console.info("MetaMask connected with account", currentAccount);
     } catch (error) {
       logStatus(`Failed to connect wallet: ${error.message}`, true);
+      console.error("Wallet connection failed", error);
     }
+    isConnectingWallet = false;
   };
 
   const handleWalletDisconnected = () => {
@@ -166,10 +189,18 @@
     }
   };
 
-  connectWalletBtn?.addEventListener("click", connectWallet);
-  loadTokenBtn?.addEventListener("click", loadToken);
-  checkAllowanceBtn?.addEventListener("click", checkAllowance);
-  approveBtn?.addEventListener("click", approveSpender);
+  if (connectWalletBtn) {
+    connectWalletBtn.addEventListener("click", connectWallet);
+  }
+  if (loadTokenBtn) {
+    loadTokenBtn.addEventListener("click", loadToken);
+  }
+  if (checkAllowanceBtn) {
+    checkAllowanceBtn.addEventListener("click", checkAllowance);
+  }
+  if (approveBtn) {
+    approveBtn.addEventListener("click", approveSpender);
+  }
 
   if (window.ethereum) {
     initializeProvider();
@@ -206,11 +237,14 @@
       }
     });
 
+    window.ethereum.on("disconnect", (error) => {
+      console.warn("MetaMask disconnected", error);
+      handleWalletDisconnected();
+    });
+
     (async () => {
       try {
-        const accounts = await window.ethereum.request({
-          method: "eth_accounts"
-        });
+        const accounts = await provider.send("eth_accounts", []);
         if (accounts && accounts.length > 0) {
           currentAccount = ethers.getAddress(accounts[0]);
           signer = await provider.getSigner();
@@ -221,6 +255,7 @@
         }
       } catch (error) {
         logStatus(`Unable to check wallet connection: ${error.message}`, true);
+        console.error("Failed to check existing wallet connection", error);
       }
     })();
   } else {

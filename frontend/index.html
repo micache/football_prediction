@@ -17,7 +17,7 @@
       <section class="card">
         <h2>Wallet Connection</h2>
         <div class="row">
-          <button id="connectWallet">Connect Wallet</button>
+          <button id="connectWallet" type="button">Connect Wallet</button>
           <span id="accountDisplay" class="muted">Not connected</span>
         </div>
         <p id="networkDisplay" class="muted"></p>
@@ -29,7 +29,7 @@
           <span>Token Contract Address</span>
           <input id="tokenAddress" placeholder="0x..." />
         </label>
-        <button id="loadToken">Load Token</button>
+        <button id="loadToken" type="button">Load Token</button>
         <p id="tokenInfo" class="muted"></p>
       </section>
 
@@ -44,8 +44,8 @@
           <input id="approveAmount" type="number" min="0" step="any" placeholder="0.0" />
         </label>
         <div class="row">
-          <button id="checkAllowance" class="secondary">Check Current Allowance</button>
-          <button id="approve">Approve Spending</button>
+          <button id="checkAllowance" class="secondary" type="button">Check Current Allowance</button>
+          <button id="approve" type="button">Approve Spending</button>
         </div>
         <p id="allowanceInfo" class="muted"></p>
       </section>
