@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ERC20 Allowance Manager</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>ERC20 Allowance Manager</h1>
+      <p class="hint">
+        Connect your wallet, select the ERC20 token contract, and approve another
+        account to spend your tokens.
+      </p>
+
+      <section class="card">
+        <h2>Wallet Connection</h2>
+        <div class="row">
+          <button id="connectWallet">Connect Wallet</button>
+          <span id="accountDisplay" class="muted">Not connected</span>
+        </div>
+        <p id="networkDisplay" class="muted"></p>
+      </section>
+
+      <section class="card">
+        <h2>Token Details</h2>
+        <label class="field">
+          <span>Token Contract Address</span>
+          <input id="tokenAddress" placeholder="0x..." />
+        </label>
+        <button id="loadToken">Load Token</button>
+        <p id="tokenInfo" class="muted"></p>
+      </section>
+
+      <section class="card">
+        <h2>Allowance</h2>
+        <label class="field">
+          <span>Spender Address</span>
+          <input id="spenderAddress" placeholder="0x..." />
+        </label>
+        <label class="field">
+          <span>Amount to Approve</span>
+          <input id="approveAmount" type="number" min="0" step="any" placeholder="0.0" />
+        </label>
+        <div class="row">
+          <button id="checkAllowance" class="secondary">Check Current Allowance</button>
+          <button id="approve">Approve Spending</button>
+        </div>
+        <p id="allowanceInfo" class="muted"></p>
+      </section>
+
+      <section class="card">
+        <h2>Status</h2>
+        <pre id="status" class="status muted">Waiting for interaction...</pre>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.15.0/dist/ethers.min.js" integrity="sha384-wJeFtVSXQbP7nU3hj65tBm40FMzkCRc5QKgNM9NP6WBLSVNMeWQkYM/qj1RfXt5p" crossorigin="anonymous"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
