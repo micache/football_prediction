@@ -1,5 +1,6 @@
 (() => {
   const connectWalletBtn = document.getElementById("connectWallet");
+  const disconnectWalletBtn = document.getElementById("disconnectWallet");
   const accountDisplay = document.getElementById("accountDisplay");
   const networkDisplay = document.getElementById("networkDisplay");
   const loadTokenBtn = document.getElementById("loadToken");
@@ -80,14 +81,6 @@
     }
   };
 
-  const initializeProvider = () => {
-    requireWallet();
-    if (!provider) {
-      provider = new ethers.BrowserProvider(window.ethereum);
-    }
-    return provider;
-  };
-
   const connectWallet = async () => {
     if (isConnectingWallet) {
       logStatus("Already requesting wallet access. Check MetaMask.");
@@ -96,7 +89,12 @@
     try {
       isConnectingWallet = true;
       requireWallet();
-      initializeProvider();
+      
+      // Reset provider and signer
+      provider = null;
+      signer = null;
+      tokenContract = null;
+      
       logStatus("Requesting MetaMask connection...");
       console.info("Requesting MetaMask connection via eth_requestAccounts");
       
@@ -108,14 +106,25 @@
         throw new Error("No accounts authorized");
       }
       
+      // Initialize provider after getting accounts
+      provider = new ethers.BrowserProvider(window.ethereum);
       currentAccount = ethers.getAddress(accounts[0]);
       signer = await provider.getSigner();
+      
       await updateAccountDisplay();
       logStatus("Wallet connected. Load a token to continue.");
       console.info("MetaMask connected with account", currentAccount);
+      
+      // Clear previous token info
+      tokenInfo.textContent = "";
+      allowanceInfo.innerHTML = "";
+      transferHistory.innerHTML = '<p class="muted">Load a token to see transfer history.</p>';
     } catch (error) {
       logStatus(`Failed to connect wallet: ${error.message}`, true);
       console.error("Wallet connection failed", error);
+      currentAccount = null;
+      signer = null;
+      provider = null;
     } finally {
       isConnectingWallet = false;
     }
@@ -125,12 +134,17 @@
     currentAccount = undefined;
     signer = undefined;
     tokenContract = undefined;
+    provider = null;
     accountDisplay.textContent = "Not connected";
     networkDisplay.textContent = "";
     tokenInfo.textContent = "";
-    allowanceInfo.textContent = "";
+    allowanceInfo.innerHTML = "";
     transferHistory.innerHTML = '<p class="muted">Connect wallet to see transfer history.</p>';
-    logStatus("Wallet disconnected. Click 'Connect Wallet' to reconnect.", true);
+    logStatus("Wallet disconnected. Click 'Connect Wallet' to reconnect.");
+  };
+
+  const disconnectWallet = () => {
+    handleWalletDisconnected();
   };
 
   const loadToken = async () => {
@@ -215,28 +229,81 @@
   };
 
   const checkAllowance = async () => {
-    if (!tokenContract) {
+    if (!tokenContract || !currentAccount) {
       logStatus("Load a token first.", true);
       return;
     }
     try {
-      const spender = spenderAddressInput.value.trim();
-      if (!spender) {
-        throw new Error("Enter a spender address");
+      logStatus("Fetching all approved spenders...");
+      allowanceInfo.innerHTML = '<p class="muted">Loading allowances...</p>';
+      
+      // Get current block number
+      const currentBlock = await provider.getBlockNumber();
+      
+      // Query last 10000 blocks for Approval events from current account
+      const fromBlock = Math.max(0, currentBlock - 10000);
+      
+      // Create filter for Approval events where owner is current account
+      const approvalFilter = tokenContract.filters.Approval(currentAccount, null);
+      
+      // Query events
+      const approvalEvents = await tokenContract.queryFilter(approvalFilter, fromBlock, currentBlock);
+      
+      if (approvalEvents.length === 0) {
+        allowanceInfo.innerHTML = '<p class="muted">No approval history found. No spenders have been approved yet.</p>';
+        logStatus("No approvals found.");
+        return;
       }
-      const checksummedSpender = ethers.getAddress(spender);
       
-      logStatus("Checking allowance...");
+      // Get unique spenders
+      const spenders = [...new Set(approvalEvents.map(event => event.args.spender))];
       
-      const allowance = await tokenContract.allowance(
-        currentAccount,
-        checksummedSpender
-      );
-      const formattedAllowance = ethers.formatUnits(allowance, tokenMeta.decimals);
-      allowanceInfo.textContent = `Current allowance for ${checksummedSpender}: ${formattedAllowance} ${tokenMeta.symbol}`;
-      logStatus("Allowance fetched successfully.");
+      // Fetch current allowance for each spender
+      const allowancePromises = spenders.map(async (spender) => {
+        const allowance = await tokenContract.allowance(currentAccount, spender);
+        return {
+          spender,
+          allowance,
+          formattedAllowance: ethers.formatUnits(allowance, tokenMeta.decimals)
+        };
+      });
+      
+      const allowances = await Promise.all(allowancePromises);
+      
+      // Filter out zero allowances
+      const activeAllowances = allowances.filter(a => a.allowance > 0n);
+      
+      if (activeAllowances.length === 0) {
+        allowanceInfo.innerHTML = '<p class="muted">No active allowances found. All previous approvals have been revoked or spent.</p>';
+        logStatus("No active allowances.");
+        return;
+      }
+      
+      // Build allowances HTML
+      let allowancesHTML = '<div class="allowance-list">';
+      allowancesHTML += `<div style="margin-bottom: 0.5rem; font-weight: 600;">Active Allowances (${activeAllowances.length}):</div>`;
+      
+      for (const item of activeAllowances) {
+        allowancesHTML += `
+          <div class="allowance-item">
+            <div class="allowance-spender">
+              <strong>Spender:</strong> <code>${formatAddress(item.spender)}</code>
+              <button class="copy-btn" onclick="navigator.clipboard.writeText('${item.spender}'); this.textContent='Copied!'; setTimeout(() => this.textContent='Copy', 1000)" title="Copy full address">Copy</button>
+            </div>
+            <div class="allowance-amount">
+              <strong>Allowed Amount:</strong> <span style="color: #6ca8ff;">${item.formattedAllowance} ${tokenMeta.symbol}</span>
+            </div>
+          </div>
+        `;
+      }
+      
+      allowancesHTML += '</div>';
+      allowanceInfo.innerHTML = allowancesHTML;
+      logStatus(`Found ${activeAllowances.length} active allowance(s).`);
+      
     } catch (error) {
-      logStatus(`Failed to fetch allowance: ${error.message}`, true);
+      logStatus(`Failed to fetch allowances: ${error.message}`, true);
+      allowanceInfo.innerHTML = '<p class="muted error">Failed to load allowances. Try again.</p>';
       console.error("Allowance check error:", error);
     }
   };
@@ -267,6 +334,11 @@
         throw new Error("Transaction failed");
       }
       logStatus(`Approval successful in block ${receipt.blockNumber}.`);
+      
+      // Clear inputs
+      approveAmountInput.value = "";
+      
+      // Refresh allowance list
       await checkAllowance();
     } catch (error) {
       logStatus(`Approval failed: ${error.message}`, true);
@@ -357,6 +429,9 @@
   // Event listeners
   if (connectWalletBtn) {
     connectWalletBtn.addEventListener("click", connectWallet);
+  }
+  if (disconnectWalletBtn) {
+    disconnectWalletBtn.addEventListener("click", disconnectWallet);
   }
   if (loadTokenBtn) {
     loadTokenBtn.addEventListener("click", loadToken);

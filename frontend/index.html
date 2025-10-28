@@ -18,6 +18,7 @@
         <h2>Wallet Connection</h2>
         <div class="row">
           <button id="connectWallet" type="button">Connect Wallet</button>
+          <button id="disconnectWallet" type="button" class="secondary">Disconnect</button>
           <span id="accountDisplay" class="muted">Not connected</span>
         </div>
         <p id="networkDisplay" class="muted"></p>
@@ -47,20 +48,26 @@
       </section>
 
       <section class="card">
-        <h2>Allowance</h2>
-        <label class="field">
-          <span>Spender Address</span>
-          <input id="spenderAddress" placeholder="0x..." />
-        </label>
-        <label class="field">
-          <span>Amount to Approve</span>
-          <input id="approveAmount" type="number" min="0" step="any" placeholder="0.0" />
-        </label>
-        <div class="row">
-          <button id="checkAllowance" class="secondary" type="button">Check Current Allowance</button>
+        <h2>Allowance Management</h2>
+        
+        <div style="margin-bottom: 1.5rem;">
+          <h3 style="font-size: 1rem; margin-bottom: 0.75rem;">View All Approved Spenders</h3>
+          <button id="checkAllowance" class="secondary" type="button">Check All Allowances</button>
+          <div id="allowanceInfo" class="allowance-info"></div>
+        </div>
+
+        <div style="border-top: 1px solid rgba(90, 118, 173, 0.25); padding-top: 1.5rem;">
+          <h3 style="font-size: 1rem; margin-bottom: 0.75rem;">Approve New Spender</h3>
+          <label class="field">
+            <span>Spender Address</span>
+            <input id="spenderAddress" placeholder="0x..." />
+          </label>
+          <label class="field">
+            <span>Amount to Approve</span>
+            <input id="approveAmount" type="number" min="0" step="any" placeholder="0.0" />
+          </label>
           <button id="approve" type="button">Approve Spending</button>
         </div>
-        <p id="allowanceInfo" class="muted"></p>
       </section>
 
       <section class="card">
