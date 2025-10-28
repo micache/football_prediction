@@ -50,11 +50,20 @@
     accountDisplay.textContent = currentAccount;
   };
 
+  const initializeProvider = () => {
+    requireWallet();
+    if (!provider) {
+      provider = new ethers.BrowserProvider(window.ethereum);
+    }
+    return provider;
+  };
+
   const connectWallet = async () => {
     try {
-      requireWallet();
-      provider = new ethers.BrowserProvider(window.ethereum);
-      const accounts = await provider.send("eth_requestAccounts", []);
+      initializeProvider();
+      const accounts = await window.ethereum.request({
+        method: "eth_requestAccounts"
+      });
       if (!accounts || accounts.length === 0) {
         throw new Error("No accounts authorized");
       }
@@ -65,6 +74,15 @@
     } catch (error) {
       logStatus(`Failed to connect wallet: ${error.message}`, true);
     }
+  };
+
+  const handleWalletDisconnected = () => {
+    currentAccount = undefined;
+    signer = undefined;
+    tokenContract = undefined;
+    accountDisplay.textContent = "Not connected";
+    networkDisplay.textContent = "";
+    logStatus("Wallet disconnected", true);
   };
 
   const loadToken = async () => {
@@ -106,7 +124,10 @@
         throw new Error("Enter a spender address");
       }
       const checksummedSpender = ethers.getAddress(spender);
-      const allowance = await tokenContract.allowance(currentAccount, checksummedSpender);
+      const allowance = await tokenContract.allowance(
+        currentAccount,
+        checksummedSpender
+      );
       const formattedAllowance = ethers.formatUnits(allowance, tokenMeta.decimals);
       allowanceInfo.textContent = `Current allowance for ${checksummedSpender}: ${formattedAllowance} ${tokenMeta.symbol}`;
       logStatus("Allowance fetched successfully.");
@@ -151,24 +172,61 @@
   approveBtn?.addEventListener("click", approveSpender);
 
   if (window.ethereum) {
+    initializeProvider();
+
     window.ethereum.on("accountsChanged", async (accounts) => {
       if (!accounts || accounts.length === 0) {
-        currentAccount = undefined;
-        accountDisplay.textContent = "Not connected";
-        logStatus("Wallet disconnected", true);
+        handleWalletDisconnected();
         return;
       }
-      currentAccount = ethers.getAddress(accounts[0]);
-      signer = await provider.getSigner();
-      await updateAccountDisplay();
-      logStatus("Account changed. Token and allowances may need to be reloaded.");
+      try {
+        initializeProvider();
+        currentAccount = ethers.getAddress(accounts[0]);
+        signer = await provider.getSigner();
+        await updateAccountDisplay();
+        logStatus(
+          "Account changed. Token and allowances may need to be reloaded."
+        );
+      } catch (error) {
+        logStatus(`Failed to handle account change: ${error.message}`, true);
+      }
     });
 
     window.ethereum.on("chainChanged", async () => {
-      provider = new ethers.BrowserProvider(window.ethereum);
-      signer = currentAccount ? await provider.getSigner() : undefined;
-      await updateAccountDisplay();
-      logStatus("Network changed. Token and allowances may need to be reloaded.");
+      provider = undefined;
+      try {
+        initializeProvider();
+        signer = currentAccount ? await provider.getSigner() : undefined;
+        await updateAccountDisplay();
+        logStatus(
+          "Network changed. Token and allowances may need to be reloaded."
+        );
+      } catch (error) {
+        logStatus(`Failed to handle network change: ${error.message}`, true);
+      }
     });
+
+    (async () => {
+      try {
+        const accounts = await window.ethereum.request({
+          method: "eth_accounts"
+        });
+        if (accounts && accounts.length > 0) {
+          currentAccount = ethers.getAddress(accounts[0]);
+          signer = await provider.getSigner();
+          await updateAccountDisplay();
+          logStatus("Wallet already connected. Load a token to continue.");
+        } else {
+          logStatus("Click \"Connect Wallet\" to link MetaMask.");
+        }
+      } catch (error) {
+        logStatus(`Unable to check wallet connection: ${error.message}`, true);
+      }
+    })();
+  } else {
+    logStatus(
+      "No Ethereum wallet detected. Install MetaMask or another compatible wallet.",
+      true
+    );
   }
 })();
