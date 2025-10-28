@@ -34,6 +34,19 @@
       </section>
 
       <section class="card">
+        <h2>Transfer Tokens</h2>
+        <label class="field">
+          <span>Recipient Address</span>
+          <input id="recipientAddress" placeholder="0x..." />
+        </label>
+        <label class="field">
+          <span>Amount to Transfer</span>
+          <input id="transferAmount" type="number" min="0" step="any" placeholder="0.0" />
+        </label>
+        <button id="transferBtn" type="button">Transfer Tokens</button>
+      </section>
+
+      <section class="card">
         <h2>Allowance</h2>
         <label class="field">
           <span>Spender Address</span>
@@ -51,16 +64,24 @@
       </section>
 
       <section class="card">
+        <h2>Transfer History</h2>
+        <div class="row" style="margin-bottom: 1rem;">
+          <button id="refreshHistory" class="secondary" type="button">Refresh History</button>
+          <span id="historyStatus" class="muted"></span>
+        </div>
+        <div id="transferHistory" class="history-container">
+          <p class="muted">Load a token and click refresh to see transfer history.</p>
+        </div>
+      </section>
+
+      <section class="card">
         <h2>Status</h2>
         <pre id="status" class="status muted">Waiting for interaction...</pre>
       </section>
     </main>
 
-    <script
-      src="https://cdn.jsdelivr.net/npm/ethers@6.15.0/dist/ethers.min.js"
-      integrity="sha384-wJeFtVSXQbP7nU3hj65tBm40FMzkCRc5QKgNM9NP6WBLSVNMeWQkYM/qj1RfXt5p"
-      crossorigin="anonymous"
-    ></script>
+    <!-- Load ethers.js from CDN - UMD version for browser -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.15.0/ethers.umd.min.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

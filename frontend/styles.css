@@ -123,6 +123,107 @@ button.secondary {
   border: 1px solid rgba(90, 118, 173, 0.4);
 }
 
+.status.error {
+  color: #ffb4b4;
+  border-color: rgba(255, 137, 137, 0.4);
+  box-shadow: 0 0 18px rgba(255, 109, 109, 0.25);
+}
+
+/* Transfer History Styles */
+.history-container {
+  max-height: 500px;
+  overflow-y: auto;
+  border-radius: 12px;
+}
+
+.history-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.history-container::-webkit-scrollbar-track {
+  background: rgba(9, 15, 28, 0.5);
+  border-radius: 4px;
+}
+
+.history-container::-webkit-scrollbar-thumb {
+  background: rgba(90, 118, 173, 0.4);
+  border-radius: 4px;
+}
+
+.history-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(90, 118, 173, 0.6);
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.history-item {
+  background: rgba(9, 15, 28, 0.6);
+  border: 1px solid rgba(90, 118, 173, 0.3);
+  border-radius: 12px;
+  padding: 1rem;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.history-item:hover {
+  transform: translateX(4px);
+  border-color: rgba(90, 118, 173, 0.5);
+}
+
+.history-item.sent {
+  border-left: 3px solid #ef4444;
+}
+
+.history-item.received {
+  border-left: 3px solid #10b981;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.history-type {
+  font-size: 1rem;
+}
+
+.history-amount {
+  color: #6ca8ff;
+  font-size: 1.1rem;
+}
+
+.history-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+  color: #aab8e8;
+}
+
+.history-details code {
+  background: rgba(90, 118, 173, 0.2);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+}
+
+.history-details a {
+  color: #6ca8ff;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.history-details a:hover {
+  text-decoration: underline;
+}
+
 @media (max-width: 600px) {
   .card {
     padding: 1.2rem;
@@ -137,10 +238,10 @@ button.secondary {
     flex-direction: column;
     align-items: stretch;
   }
-}
 
-.status.error {
-  color: #ffb4b4;
-  border-color: rgba(255, 137, 137, 0.4);
-  box-shadow: 0 0 18px rgba(255, 109, 109, 0.25);
+  .history-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
 }
